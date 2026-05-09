@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>多语言翻译 · 朗读器</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+SC:wght@300;400;500&family=IM+Fell+DW+Pica:ital@1&family=DM+Mono:wght@400&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#f5f3ee;--surface:#fff;--surface2:#f0ede6;--border:#ddd9d0;--border-light:#e8e4dc;--text-primary:#1a1814;--text-secondary:#6b6660;--text-muted:#a09890;--accent:#8b1a1a;--accent-light:#f5e8e8;--blue:#1a4a8b;--blue-bg:#e8f0fb;--blue-border:#a0b8d8;--ink:#2c2418;--green:#1e5c3a;--warn-bg:#fffbf0;--warn-border:#c9920a;--warn-text:#7a5800;--radius:13px}
+    body{background:var(--bg);color:var(--text-primary);font-family:'Noto Sans SC',sans-serif;font-weight:300;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+    body::before{content:'';display:block;width:100%;height:3px;background:linear-gradient(90deg,#8b1a1a 0%,#4a6ea8 50%,#1a4a8b 100%);position:fixed;top:0;left:0;z-index:100}
+    .page{width:100%;max-width:980px;padding:52px 24px 80px}
+    .header{text-align:center;margin-bottom:34px}
+    .header-eyebrow{font-family:'Noto Serif JP',serif;font-size:12px;letter-spacing:.3em;color:var(--accent);margin-bottom:8px}
+    .header h1{font-size:25px;font-weight:500;color:var(--ink);letter-spacing:.04em}
+    .header-sub{font-size:13px;color:var(--text-muted);margin-top:7px;line-height:1.7}
+    .header-divider{width:36px;height:1px;background:var(--accent);margin:13px auto 0;opacity:.38}
+    .settings-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px 18px;margin-bottom:10px;display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+    .set-group{display:flex;align-items:center;gap:7px}
+    .set-label{font-size:12px;color:var(--text-secondary);white-space:nowrap}
+    .apikey-input{width:230px;border:1px solid var(--border);background:var(--surface2);border-radius:6px;padding:6px 10px;font-size:13px;color:var(--text-primary);font-family:'DM Mono',monospace;outline:none}
+    .apikey-input:focus{background:var(--border-light);border-color:#c0a080}
+    .apikey-input::placeholder{color:var(--text-muted);font-family:'Noto Sans SC',sans-serif;font-size:12px}
+    select.gsel{border:1px solid var(--border);background:var(--surface);border-radius:6px;padding:5px 9px;font-size:12px;color:var(--text-primary);font-family:'Noto Sans SC',sans-serif;outline:none;cursor:pointer}
+    .sep{width:1px;height:20px;background:var(--border);flex-shrink:0}
+    .speed-wrap{display:flex;align-items:center;gap:8px;margin-left:auto}
+    input[type=range]{-webkit-appearance:none;appearance:none;width:86px;height:4px;background:var(--border);border-radius:2px;outline:none;cursor:pointer}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--accent);cursor:pointer}
+    .speed-val{font-family:'DM Mono',monospace;font-size:12px;color:var(--text-secondary);min-width:30px}
+    .apikey-hint{font-size:11px;color:var(--text-muted);margin-bottom:18px}
+    .apikey-hint a{color:var(--blue);text-decoration:none}
+    .cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:16px}
+    @media(max-width:620px){.cards-grid{grid-template-columns:1fr}}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+    .card:focus-within{border-color:#c0a080;box-shadow:0 0 0 3px rgba(139,26,26,.05)}
+    .card.translating{border-color:var(--warn-border);box-shadow:0 0 0 3px rgba(201,146,10,.08)}
+    .card.done{border-color:#8aab8a;box-shadow:0 0 0 3px rgba(30,92,58,.06)}
+    .card.playing{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,74,139,.08)}
+    .card-head{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--border-light);flex-wrap:wrap}
+    .card-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:.06em;flex-shrink:0}
+    .lang-arrow{font-size:13px;color:var(--text-muted);flex-shrink:0}
+    select.lang-sel{border:1px solid var(--border-light);background:var(--surface2);border-radius:5px;padding:3px 7px;font-size:12px;color:var(--text-secondary);font-family:'Noto Sans SC',sans-serif;outline:none;cursor:pointer}
+    .char-ct{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);margin-left:auto}
+    textarea.ta{display:block;width:100%;min-height:76px;padding:11px 14px;font-size:15px;line-height:1.78;color:var(--text-primary);background:transparent;border:none;resize:vertical;outline:none;font-family:'Noto Sans SC','Noto Serif JP',sans-serif;font-weight:300}
+    textarea.ta::placeholder{color:var(--text-muted);font-size:13px}
+    .card-actions{display:flex;align-items:center;gap:6px;padding:7px 11px 9px;border-top:1px solid var(--border-light);flex-wrap:wrap}
+    .btn-tr{display:flex;align-items:center;gap:5px;background:var(--accent);color:#fff;border:none;border-radius:7px;padding:5px 14px;font-size:12px;font-family:'Noto Sans SC',sans-serif;cursor:pointer;transition:background .18s,transform .1s;white-space:nowrap}
+    .btn-tr:hover{background:#a01f1f}.btn-tr:active{transform:scale(.97)}.btn-tr:disabled{background:#c8b8b8;cursor:not-allowed;transform:none}
+    .spinner{width:11px;height:11px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;display:none;flex-shrink:0}
+    .spinner.on{display:block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .btn-sm{display:flex;align-items:center;gap:4px;background:transparent;border:1px solid var(--border-light);border-radius:6px;padding:4px 9px;font-size:12px;color:var(--text-secondary);cursor:pointer;font-family:'Noto Sans SC',sans-serif;transition:all .15s;white-space:nowrap}
+    .btn-sm:hover{background:var(--surface2)}.btn-sm.speak-on{color:var(--blue);border-color:var(--blue-border);background:var(--blue-bg)}.btn-sm svg{width:12px;height:12px;flex-shrink:0}.btn-clr{color:var(--text-muted)}
+    .card-msg{display:none;padding:7px 13px;font-size:12px;line-height:1.6;white-space:pre-wrap}.card-msg.on{display:block}
+    .card-msg.err{background:var(--accent-light);color:var(--accent);border-top:1px solid #e8c0c0}
+    .card-msg.wrn{background:var(--warn-bg);color:var(--warn-text);border-top:1px solid #e8d89a}
+    .prog-wrap{height:3px;background:#e8d99a;border-radius:2px;margin-top:6px;overflow:hidden}.prog-bar{height:100%;background:var(--warn-border);border-radius:2px;width:100%}
+    .card-result{display:none;border-top:1px solid var(--border-light)}.card-result.on{display:block;animation:fadeUp .26s ease}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    .res-block{padding:9px 14px;border-bottom:1px solid var(--border-light)}.res-block:last-child{border-bottom:none}
+    .res-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+    .res-tag{display:flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
+    .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}.dot-main{background:var(--accent)}.dot-kana{background:var(--blue)}.dot-roma{background:#5a7a5a}
+    .res-actions{display:flex;gap:5px;align-items:center}
+    .copy-btn{background:transparent;border:1px solid var(--border-light);border-radius:4px;padding:2px 8px;font-size:10px;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all .15s}
+    .copy-btn:hover{background:var(--surface2)}.copy-btn.copied{color:var(--green);border-color:#a5d6a7;background:#f1f8e9}
+    .speak-res-btn{background:transparent;border:1px solid var(--border-light);border-radius:4px;padding:2px 8px;font-size:10px;color:var(--blue);cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:3px}
+    .speak-res-btn:hover,.speak-res-btn.speak-on{background:var(--blue-bg);border-color:var(--blue-border)}.speak-res-btn svg{width:10px;height:10px}
+    .text-main{font-size:17px;line-height:1.9;color:var(--ink)}.text-main.ja{font-family:'Noto Serif JP',serif;letter-spacing:.05em}.text-main.zh{font-family:'Noto Sans SC',sans-serif;font-weight:400}.text-main.en{font-family:'IM Fell DW Pica',serif;font-size:16px}
+    .text-kana{font-family:'Noto Serif JP',serif;font-size:14px;line-height:1.9;color:var(--text-secondary)}
+    .text-roma{font-family:'IM Fell DW Pica',serif;font-style:italic;font-size:13px;line-height:1.8;color:var(--text-muted)}
+    .bottom-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .btn-all{display:flex;align-items:center;gap:7px;padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-primary);font-size:13px;font-family:'Noto Sans SC',sans-serif;cursor:pointer;transition:all .15s}
+    .btn-all:hover{background:var(--surface2)}.btn-all.active{color:var(--blue);border-color:var(--blue-border);background:var(--blue-bg)}
+    .btn-tr-all{display:flex;align-items:center;gap:7px;padding:8px 20px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:13px;font-family:'Noto Sans SC',sans-serif;cursor:pointer;transition:background .15s}
+    .btn-tr-all:hover{background:#a01f1f}.btn-tr-all:disabled{background:#c8b8b8;cursor:not-allowed}
+    .btn-stop{display:flex;align-items:center;gap:7px;padding:8px 20px;border-radius:8px;border:1px solid #d0a0a0;background:transparent;color:var(--accent);font-size:13px;font-family:'Noto Sans SC',sans-serif;cursor:pointer;transition:all .15s}
+    .btn-stop:hover{background:var(--accent-light)}
+    .footer{text-align:center;margin-top:46px;font-size:12px;color:var(--text-muted);line-height:2}
+    .footer em{font-family:'Noto Serif JP',serif;font-style:normal;letter-spacing:.1em}
+    @media(max-width:520px){.page{padding:44px 13px 60px}.header h1{font-size:20px}.apikey-input{width:160px}.speed-wrap{margin-left:0}}
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="header-eyebrow">中文 · 日本語 · English</div>
+    <h1>多语言翻译 · 朗读器</h1>
+    <p class="header-sub">每个框独立选择「输入语言 → 翻译语言」· 翻译 · 朗读原文与译文</p>
+    <div class="header-divider"></div>
+  </div>
+  <div class="settings-bar">
+    <div class="set-group">
+      <span class="set-label">Gemini Key</span>
+      <input class="apikey-input" type="password" id="apiKey" placeholder="AIza…" autocomplete="off" />
+    </div>
+    <div class="set-group">
+      <span class="set-label">模型</span>
+      <select class="gsel" id="modelSelect">
+        <option value="gemini-2.5-flash">gemini-2.5-flash（推荐）</option>
+        <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+        <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+      </select>
+    </div>
+    <div class="sep"></div>
+    <div class="speed-wrap">
+      <span class="set-label">朗读语速</span>
+      <input type="range" id="speedSlider" min="0.5" max="1.6" step="0.1" value="0.9"
+             oninput="document.getElementById('speedVal').textContent=parseFloat(this.value).toFixed(1)+'×'">
+      <span class="speed-val" id="speedVal">0.9×</span>
+    </div>
+  </div>
+  <p class="apikey-hint">免费获取：<a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a> · 无需信用卡 · 若报错 404 请切换模型</p>
+  <div class="cards-grid" id="cardsGrid"></div>
+  <div class="bottom-bar">
+    <button class="btn-tr-all" id="btnTrAll" onclick="translateAll()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex-shrink:0"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>全部翻译
+    </button>
+    <button class="btn-all" id="btnAll" onclick="speakAll()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex-shrink:0"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>全部朗读译文
+    </button>
+    <button class="btn-stop" onclick="stopAll()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>全部停止
+    </button>
+  </div>
+  <div class="footer"><em>多言語翻訳 · 朗読</em> · Powered by Google Gemini · Web Speech API · 数据不会被储存</div>
+</div>
+<script>
+var TTS='speechSynthesis'in window,NUM=6;
+var LANGS={zh:{label:'中文',tts:'zh-CN',name:'Chinese'},ja:{label:'日語',tts:'ja-JP',name:'Japanese'},en:{label:'English',tts:'en-US',name:'English'}};
+var LKEYS=['zh','ja','en'];
+var DEF_SRC=['zh','zh','ja','en','zh','en'],DEF_TGT=['ja','en','zh','zh','en','ja'];
+var PH={zh:['输入中文，例：我今天去图书馆借了几本书。','例：春天来了，樱花开满了整条街。','例：请问最近的地铁站在哪里？','例：我非常喜欢日本的传统文化。','例：谢谢你昨天帮助了我。','例：明天的会议几点开始？'],ja:['日本語を入力，例：今日はいい天気ですね。','例：日本語を勉強するのが好きです。','例：よろしくお願いします。','例：この本はとても面白いです。','例：また明日！','例：ありがとうございました。'],en:['Type English, e.g. The weather is nice today.','e.g. I enjoy learning languages.','e.g. Nice to meet you.','e.g. This book is very interesting.','e.g. See you tomorrow!','e.g. Thank you for your help.']};
+function iVol(){return'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';}
+function iPause(){return'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function langOpts(sel){return LKEYS.map(function(k){return'<option value="'+k+'"'+(k===sel?' selected':'')+'>'+LANGS[k].label+'</option>';}).join('');}
+function buildCards(){
+  var g=document.getElementById('cardsGrid');
+  for(var i=0;i<NUM;i++){(function(idx){
+    var src=DEF_SRC[idx],tgt=DEF_TGT[idx],d=document.createElement('div');
+    d.className='card';d.id='card'+idx;
+    d.innerHTML='<div class="card-head"><span class="card-num">0'+(idx+1)+'</span><select class="lang-sel" id="src'+idx+'" onchange="onLC('+idx+')">'+langOpts(src)+'</select><span class="lang-arrow">→</span><select class="lang-sel" id="tgt'+idx+'" onchange="onLC('+idx+')">'+langOpts(tgt)+'</select><span class="char-ct" id="ct'+idx+'">0</span></div><textarea class="ta" id="ta'+idx+'" rows="4" placeholder="'+PH[src][idx]+'"></textarea><div class="card-msg err" id="err'+idx+'"></div><div class="card-msg wrn" id="wrn'+idx+'"><span id="wt'+idx+'"></span><div class="prog-wrap"><div class="prog-bar" id="pg'+idx+'"></div></div></div><div class="card-actions"><button class="btn-tr" id="btr'+idx+'" onclick="translateCard('+idx+')"><span class="spinner" id="sp'+idx+'"></span>翻译</button><button class="btn-sm" id="bsi'+idx+'" onclick="speakInput('+idx+')">'+iVol()+'朗读原文</button><button class="btn-sm btn-clr" onclick="clearCard('+idx+')">清空</button></div><div class="card-result" id="res'+idx+'"></div>';
+    g.appendChild(d);
+    document.getElementById('ta'+idx).addEventListener('input',function(){document.getElementById('ct'+idx).textContent=this.value.length;});
+  })(i);}
+}
+function onLC(idx){var src=document.getElementById('src'+idx).value;document.getElementById('ta'+idx).placeholder=PH[src][idx]||PH[src][0];var r=document.getElementById('res'+idx);r.classList.remove('on');r.innerHTML='';document.getElementById('err'+idx).classList.remove('on');document.getElementById('card'+idx).classList.remove('done');}
+function renderResult(idx,parsed,tgtKey){
+  var res=document.getElementById('res'+idx),ttsLang=LANGS[tgtKey].tts,lbl=LANGS[tgtKey].label,isJa=(tgtKey==='ja');
+  var html='<div class="res-block"><div class="res-meta"><div class="res-tag"><span class="dot dot-main"></span>'+lbl+'</div><div class="res-actions"><button class="speak-res-btn" id="bsr'+idx+'" onclick="speakResult('+idx+',\''+ttsLang+'\',\'main'+idx+'\')">'+iVol()+'朗读</button><button class="copy-btn" id="cpm'+idx+'" onclick="copyEl(\'main'+idx+'\',\'cpm'+idx+'\')">复制</button></div></div><div class="text-main '+tgtKey+'" id="main'+idx+'">'+esc(parsed.translation||'—')+'</div></div>';
+  if(isJa&&parsed.reading)html+='<div class="res-block"><div class="res-meta"><div class="res-tag"><span class="dot dot-kana"></span>振り仮名</div><button class="copy-btn" id="cpk'+idx+'" onclick="copyEl(\'kana'+idx+'\',\'cpk'+idx+'\')">复制</button></div><div class="text-kana" id="kana'+idx+'">'+esc(parsed.reading)+'</div></div>';
+  if(isJa&&parsed.romaji)html+='<div class="res-block"><div class="res-meta"><div class="res-tag"><span class="dot dot-roma"></span>ローマ字</div><button class="copy-btn" id="cpr'+idx+'" onclick="copyEl(\'roma'+idx+'\',\'cpr'+idx+'\')">复制</button></div><div class="text-roma" id="roma'+idx+'">'+esc(parsed.romaji)+'</div></div>';
+  res.innerHTML=html;res.classList.add('on');
+}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+async function geminiCall(k,m,p){
+  var r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent?key='+k,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:p}]}],generationConfig:{temperature:0.2,maxOutputTokens:1024}})});
+  if(r.status===429){var b=await r.json().catch(function(){return{};});var msg=(b&&b.error&&b.error.message)?b.error.message.toLowerCase():'';if(msg.indexOf('day')!==-1||msg.indexOf('quota')!==-1)throw new Error('今日免费额度已用尽，请明天再试或升级账号。');return null;}
+  if(!r.ok){var ed=await r.json().catch(function(){return{};});var em=(ed&&ed.error&&ed.error.message)?ed.error.message:'HTTP '+r.status;if(r.status===400&&em.indexOf('API_KEY')!==-1)throw new Error('API Key 无效，请检查。');if(r.status===403)throw new Error('Key 权限不足。');if(r.status===404)throw new Error('模型不可用，请切换。');throw new Error('API 错误（'+r.status+'）：'+em);}
+  return r.json();
+}
+async function countdown(idx,sec){var wrn=document.getElementById('wrn'+idx),wt=document.getElementById('wt'+idx),pg=document.getElementById('pg'+idx);wrn.classList.add('on');pg.style.transition='none';pg.style.width='100%';pg.getBoundingClientRect();pg.style.transition='width '+sec+'s linear';pg.style.width='0%';for(var i=sec;i>0;i--){wt.textContent='频率超限，'+i+' 秒后重试…';await sleep(1000);}wrn.classList.remove('on');}
+async function translateCard(idx){
+  var text=document.getElementById('ta'+idx).value.trim(),apiKey=document.getElementById('apiKey').value.trim(),model=document.getElementById('modelSelect').value,srcKey=document.getElementById('src'+idx).value,tgtKey=document.getElementById('tgt'+idx).value;
+  var errEl=document.getElementById('err'+idx),wrnEl=document.getElementById('wrn'+idx),btn=document.getElementById('btr'+idx),sp=document.getElementById('sp'+idx),resEl=document.getElementById('res'+idx),card=document.getElementById('card'+idx);
+  if(!text){showErr(idx,'请先输入文字。');return;}if(!apiKey){showErr(idx,'请先填写 Gemini API Key。');return;}if(srcKey===tgtKey){showErr(idx,'输入语言与目标语言相同，请重新选择。');return;}
+  btn.disabled=true;sp.classList.add('on');errEl.classList.remove('on');wrnEl.classList.remove('on');resEl.classList.remove('on');resEl.innerHTML='';card.classList.remove('done');card.classList.add('translating');
+  var srcName=LANGS[srcKey].name,tgtName=LANGS[tgtKey].name;
+  var prompt=tgtKey==='ja'?'You are a professional translator. Translate the following '+srcName+' text into natural, idiomatic Japanese.\n\nReply ONLY with this exact JSON (no markdown, no extra text):\n{"translation":"日本語訳","reading":"平假名読み","romaji":"Hepburn romaji"}\n\n'+srcName+': '+text:'You are a professional translator. Translate the following '+srcName+' text into natural, idiomatic '+tgtName+'.\n\nReply ONLY with this exact JSON (no markdown, no extra text):\n{"translation":"translated text"}\n\n'+srcName+': '+text;
+  try{
+    var data=await geminiCall(apiKey,model,prompt);
+    for(var i=0;data===null&&i<2;i++){sp.classList.remove('on');await countdown(idx,65);btn.disabled=true;sp.classList.add('on');data=await geminiCall(apiKey,model,prompt);}
+    if(data===null)throw new Error('连续频率超限，请稍后手动重试。');
+    var raw='';try{raw=data.candidates[0].content.parts[0].text;}catch(e){}
+    var clean=raw.replace(/```json|```/g,'').trim(),mx=clean.match(/\{[\s\S]*\}/);if(mx)clean=mx[0];
+    var parsed=JSON.parse(clean);
+    renderResult(idx,parsed,tgtKey);card.classList.remove('translating');card.classList.add('done');
+  }catch(e){showErr(idx,e.message||'翻译失败，请稍后重试。');card.classList.remove('translating');}
+  finally{btn.disabled=false;sp.classList.remove('on');}
+}
+function showErr(idx,msg){var e=document.getElementById('err'+idx);e.textContent=msg;e.classList.add('on');}
+async function translateAll(){var btn=document.getElementById('btnTrAll');btn.disabled=true;for(var i=0;i<NUM;i++)if(document.getElementById('ta'+i).value.trim())await translateCard(i);btn.disabled=false;}
+function clearCard(idx){stopAll();document.getElementById('ta'+idx).value='';document.getElementById('ct'+idx).textContent='0';document.getElementById('err'+idx).classList.remove('on');document.getElementById('wrn'+idx).classList.remove('on');var r=document.getElementById('res'+idx);r.classList.remove('on');r.innerHTML='';document.getElementById('card'+idx).classList.remove('done','translating','playing');}
+async function copyEl(elId,btnId){var el=document.getElementById(elId);if(!el)return;var btn=document.getElementById(btnId);try{await navigator.clipboard.writeText(el.textContent);btn.textContent='已复制 ✓';btn.classList.add('copied');setTimeout(function(){btn.textContent='复制';btn.classList.remove('copied');},2000);}catch(e){}}
+function getVoice(lang){var v=window.speechSynthesis.getVoices();return v.find(function(x){return x.lang===lang;})||v.find(function(x){return x.lang.startsWith(lang.split('-')[0]);})||null;}
+var curBtn=null,curCard=null;
+function resetSpeak(btn,ci){if(btn){btn.classList.remove('speak-on');btn.innerHTML=iVol()+'朗读';}if(ci!=null){document.getElementById('card'+ci).classList.remove('playing');var ib=document.getElementById('bsi'+ci);if(ib){ib.classList.remove('speak-on');ib.innerHTML=iVol()+'朗读原文';}}document.getElementById('btnAll').classList.remove('active');}
+function doSpeak(text,lang,onEnd,btn,ci){
+  if(!TTS){alert('您的浏览器不支持语音朗读，请使用 Chrome、Edge 或 Safari。');return;}
+  if(!text){if(onEnd)onEnd();return;}
+  if(window.speechSynthesis.speaking){window.speechSynthesis.cancel();resetSpeak(curBtn,curCard);if(curBtn===btn){curBtn=null;curCard=null;return;}}
+  var speed=parseFloat(document.getElementById('speedSlider').value),utter=new SpeechSynthesisUtterance(text);
+  utter.lang=lang;utter.rate=speed;utter.pitch=1.0;var v=getVoice(lang);if(v)utter.voice=v;
+  curBtn=btn;curCard=ci;
+  utter.onstart=function(){if(btn){btn.classList.add('speak-on');btn.innerHTML=iPause()+'停止';}if(ci!=null)document.getElementById('card'+ci).classList.add('playing');};
+  utter.onend=utter.onerror=function(){resetSpeak(btn,ci);curBtn=null;curCard=null;if(onEnd)onEnd();};
+  window.speechSynthesis.speak(utter);
+}
+function speakResult(idx,lang,elId){var el=document.getElementById(elId);if(!el)return;var t=el.textContent.trim();if(!t||t==='—')return;doSpeak(t,lang,null,document.getElementById('bsr'+idx),idx);}
+function speakInput(idx){var t=document.getElementById('ta'+idx).value.trim();if(!t)return;doSpeak(t,LANGS[document.getElementById('src'+idx).value].tts,null,document.getElementById('bsi'+idx),idx);}
+function speakAll(){
+  if(!TTS){alert('您的浏览器不支持语音朗读。');return;}stopAll();
+  var items=[];for(var i=0;i<NUM;i++){var el=document.getElementById('main'+i),ts=document.getElementById('tgt'+i);if(el&&el.textContent.trim()&&el.textContent.trim()!=='—'&&ts)items.push({idx:i,text:el.textContent.trim(),tts:LANGS[ts.value].tts});}
+  if(!items.length)return;var ab=document.getElementById('btnAll');ab.classList.add('active');
+  function next(pos){if(pos>=items.length){ab.classList.remove('active');return;}var it=items[pos];doSpeak(it.text,it.tts,function(){next(pos+1);},document.getElementById('bsr'+it.idx),it.idx);}
+  next(0);
+}
+function stopAll(){if(TTS)window.speechSynthesis.cancel();resetSpeak(curBtn,curCard);curBtn=null;curCard=null;document.getElementById('btnAll').classList.remove('active');for(var i=0;i<NUM;i++){var b=document.getElementById('bsr'+i);if(b){b.classList.remove('speak-on');b.innerHTML=iVol()+'朗读';}var ib=document.getElementById('bsi'+i);if(ib){ib.classList.remove('speak-on');ib.innerHTML=iVol()+'朗读原文';}document.getElementById('card'+i).classList.remove('playing');}}
+if(TTS&&window.speechSynthesis.onvoiceschanged!==undefined)window.speechSynthesis.onvoiceschanged=function(){};
+buildCards();
+</script>
+</body>
+</html>
